@@ -38,7 +38,7 @@ export class DataService {
       });
     }
 
-    return apiClient.post<FileUploadResponse>('/upload', formData, {
+    return apiClient.post<FileUploadResponse>('upload', formData, {
       'Content-Type': 'multipart/form-data'
     });
   }

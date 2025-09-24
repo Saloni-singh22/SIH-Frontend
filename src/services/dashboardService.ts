@@ -11,7 +11,7 @@ export class DashboardService {
    * Get comprehensive dashboard statistics
    */
   static async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
-    return apiClient.get<DashboardStats>('/dashboard/stats');
+    return apiClient.get<DashboardStats>('dashboard/stats');
   }
 
   /**
@@ -40,7 +40,7 @@ export class DashboardService {
       uptime: number;
       version: string;
       environment: string;
-    }>('/dashboard/health');
+    }>('dashboard/health');
   }
 
   /**
@@ -71,7 +71,7 @@ export class DashboardService {
         metadata?: Record<string, any>;
       }>;
       total: number;
-    }>('/dashboard/activities', { limit });
+    }>('dashboard/activities', { limit });
   }
 
   /**
@@ -136,7 +136,7 @@ export class DashboardService {
         count: number;
         severity: 'HIGH' | 'MEDIUM' | 'LOW';
       }>;
-    }>('/dashboard/mapping-quality');
+    }>('dashboard/mapping-quality');
   }
 
   /**
@@ -199,7 +199,7 @@ export class DashboardService {
         recordCount: number;
         lastActivity: string;
       }>;
-    }>('/dashboard/data-processing');
+    }>('dashboard/data-processing');
   }
 
   /**
@@ -258,7 +258,7 @@ export class DashboardService {
         biomedicineEntities: number;
         lastUpdated: string;
       };
-    }>('/dashboard/who-integration');
+    }>('dashboard/who-integration');
   }
 
   /**
@@ -311,7 +311,7 @@ export class DashboardService {
         totalSessions: number;
         bounceRate: number;
       };
-    }>('/dashboard/user-analytics');
+    }>('dashboard/user-analytics');
   }
 
   /**
@@ -348,21 +348,21 @@ export class DashboardService {
       }>;
       unreadCount: number;
       criticalCount: number;
-    }>('/dashboard/alerts');
+    }>('dashboard/alerts');
   }
 
   /**
    * Mark alert as read
    */
   static async markAlertAsRead(alertId: string): Promise<ApiResponse<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>(`/dashboard/alerts/${alertId}/read`);
+    return apiClient.post<{ success: boolean }>(`dashboard/alerts/${alertId}/read`);
   }
 
   /**
    * Mark all alerts as read
    */
   static async markAllAlertsAsRead(): Promise<ApiResponse<{ success: boolean; markedCount: number }>> {
-    return apiClient.post<{ success: boolean; markedCount: number }>('/dashboard/alerts/mark-all-read');
+    return apiClient.post<{ success: boolean; markedCount: number }>('dashboard/alerts/mark-all-read');
   }
 
   /**

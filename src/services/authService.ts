@@ -14,7 +14,7 @@ export class AuthService {
    * Initiate ABHA authentication with OTP
    */
   static async loginWithOTP(abhaNumber: string): Promise<ApiResponse<{ sessionId: string; message: string }>> {
-    return apiClient.post('/auth/abha/otp/generate', {
+    return apiClient.post('auth/abha/otp/generate', {
       abhaNumber,
       authMethod: 'ABHA_OTP'
     });
@@ -24,7 +24,7 @@ export class AuthService {
    * Verify OTP and complete authentication
    */
   static async verifyOTP(sessionId: string, otp: string): Promise<ApiResponse<AuthResponse>> {
-    const response = await apiClient.post<AuthResponse>('/auth/abha/otp/verify', {
+    const response = await apiClient.post<AuthResponse>('auth/abha/otp/verify', {
       sessionId,
       otp
     });
@@ -38,7 +38,7 @@ export class AuthService {
    * Login with ABHA PIN
    */
   static async loginWithPIN(request: ABHAAuthRequest): Promise<ApiResponse<AuthResponse>> {
-    const response = await apiClient.post<AuthResponse>('/auth/abha/pin', request);
+    const response = await apiClient.post<AuthResponse>('auth/abha/pin', request);
     
     // Store tokens in the API client
     apiClient.setAuthTokens(response.data);
@@ -49,7 +49,7 @@ export class AuthService {
    * Refresh authentication token
    */
   static async refreshToken(refreshToken: string): Promise<ApiResponse<AuthResponse>> {
-    const response = await apiClient.post<AuthResponse>('/auth/refresh', {
+    const response = await apiClient.post<AuthResponse>('auth/refresh', {
       refreshToken
     });
     
@@ -63,7 +63,7 @@ export class AuthService {
    */
   static async logout(): Promise<ApiResponse<{ message: string }>> {
     try {
-      const response = await apiClient.post<{ message: string }>('/auth/logout');
+      const response = await apiClient.post<{ message: string }>('auth/logout');
       return response;
     } finally {
       // Clear tokens regardless of API response
@@ -75,14 +75,14 @@ export class AuthService {
    * Get current user profile
    */
   static async getCurrentUser(): Promise<ApiResponse<AuthResponse['abhaProfile']>> {
-    return apiClient.get('/auth/profile');
+    return apiClient.get('auth/profile');
   }
 
   /**
    * Validate current session
    */
   static async validateSession(): Promise<ApiResponse<{ valid: boolean; expiresAt: string }>> {
-    return apiClient.get('/auth/validate');
+    return apiClient.get('auth/validate');
   }
 
   /**

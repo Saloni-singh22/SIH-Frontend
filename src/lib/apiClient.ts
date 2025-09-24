@@ -4,6 +4,7 @@
  */
 
 import type { AuthResponse } from '../types/api';
+import { API_CONFIG } from '../config/api';
 
 export interface ApiClientConfig {
   baseURL: string;
@@ -142,6 +143,13 @@ class ApiClient {
 
   private buildURL(url: string, params?: Record<string, any>): string {
     const fullURL = new URL(url, this.config.baseURL);
+    
+    // Debug logging
+    console.log('API Client buildURL:', {
+      inputUrl: url,
+      baseURL: this.config.baseURL,
+      resultURL: fullURL.toString()
+    });
     
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -339,12 +347,12 @@ class APIError extends Error {
 
 // Default configuration
 const DEFAULT_CONFIG: ApiClientConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
-  timeout: 30000,
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   retries: 3,
   retryDelay: 1000,
-  enableAuth: true,
-  enableLogging: import.meta.env.DEV
+  enableAuth: API_CONFIG.ENABLE_AUTH,
+  enableLogging: API_CONFIG.ENABLE_LOGGING
 };
 
 // Create and export the default API client instance
