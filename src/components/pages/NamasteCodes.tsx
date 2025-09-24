@@ -4,64 +4,50 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Search, Filter, Plus, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, Filter, Plus, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
 import { motion } from "framer-motion";
 import { AnimatedDropdown } from '../ui/AnimatedDropdown';
+import { useCodeSystems } from '../../hooks/useApi';
 
 export function NamasteCodes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
 
-  // Mock data for Namaste codes
-  const namasteCodesData = [
-    {
-      id: 'NAMASTE-001',
-      code: 'NAM001',
-      description: 'Anxiety disorder, generalized',
-      category: 'Mental Health',
-      status: 'Active',
-      lastModified: '2024-09-20',
-      mappings: 3
-    },
-    {
-      id: 'NAMASTE-002',
-      code: 'NAM002',
-      description: 'Hypertension, essential',
-      category: 'Cardiovascular',
-      status: 'Active',
-      lastModified: '2024-09-19',
-      mappings: 5
-    },
-    {
-      id: 'NAMASTE-003',
-      code: 'NAM003',
-      description: 'Diabetes mellitus, type 2',
-      category: 'Endocrine',
-      status: 'Under Review',
-      lastModified: '2024-09-18',
-      mappings: 2
-    },
-    {
-      id: 'NAMASTE-004',
-      code: 'NAM004',
-      description: 'Chronic obstructive pulmonary disease',
-      category: 'Respiratory',
-      status: 'Active',
-      lastModified: '2024-09-17',
-      mappings: 4
-    },
-    {
-      id: 'NAMASTE-005',
-      code: 'NAM005',
-      description: 'Rheumatoid arthritis',
-      category: 'Musculoskeletal',
-      status: 'Inactive',
-      lastModified: '2024-09-16',
-      mappings: 1
-    }
-  ];
+  // Fetch NAMASTE code systems from API
+  const { 
+    data: codeSystemsResponse, 
+    isLoading, 
+    error 
+  } = useCodeSystems({ 
+    _summary: 'true',
+    url: 'http://terminology.hl7.org/CodeSystem/namaste' 
+  });
 
-  const categories = ['All Categories', 'Mental Health', 'Cardiovascular', 'Endocrine', 'Respiratory', 'Musculoskeletal'];
+  // Transform API data to component format
+  const namasteCodesData = React.useMemo(() => {
+    if (!codeSystemsResponse?.data?.entry) return [];
+    
+    return codeSystemsResponse.data.entry.flatMap((entry: any) => {
+      if (!entry.resource?.concept) return [];
+      
+      return entry.resource.concept.map((concept: any) => ({
+        id: `${entry.resource.id || 'NAMASTE'}-${concept.code}`,
+        code: concept.code,
+        description: concept.display || concept.definition || 'No description available',
+        category: entry.resource.title || 'NAMASTE',
+        status: entry.resource.status === 'active' ? 'Active' : 
+                 entry.resource.status === 'draft' ? 'Under Review' : 'Inactive',
+        lastModified: entry.resource.date?.split('T')[0] || '2024-01-01',
+        mappings: concept.property?.length || 0
+      }));
+    });
+  }, [codeSystemsResponse]);
+
+  // Extract unique categories for dropdown
+  const categories = React.useMemo(() => {
+    const uniqueCategories = [...new Set(namasteCodesData.map(item => item.category))];
+    return ['All Categories', ...uniqueCategories];
+  }, [namasteCodesData]);
 
   const filteredCodes = namasteCodesData.filter(code => {
     const matchesSearch = code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -176,7 +162,9 @@ export function NamasteCodes() {
       {/* Codes Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Namaste Codes ({filteredCodes.length} results)</CardTitle>
+          <CardTitle>
+            NAMASTE Codes ({isLoading ? '...' : filteredCodes.length} results)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -193,41 +181,64 @@ export function NamasteCodes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCodes.map((code) => (
-                  <TableRow key={code.id}>
-                    <TableCell className="font-mono">{code.code}</TableCell>
-                    <TableCell className="max-w-md">
-                      <div className="truncate" title={code.description}>
-                        {code.description}
-                      </div>
-                    </TableCell>
-                    <TableCell>{code.category}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(code.status)}>
-                        {code.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{code.mappings}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {code.lastModified}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Loading NAMASTE codes...</span>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                      Failed to load codes. Please try again.
+                    </TableCell>
+                  </TableRow>
+                ) : filteredCodes.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No codes found matching your criteria.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredCodes.map((code) => (
+                    <TableRow key={code.id}>
+                      <TableCell className="font-mono">{code.code}</TableCell>
+                      <TableCell className="max-w-md">
+                        <div className="truncate" title={code.description}>
+                          {code.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>{code.category}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(code.status)}>
+                          {code.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{code.mappings}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {code.lastModified}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

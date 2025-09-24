@@ -6,26 +6,66 @@ import {
   Download,
   TrendingUp,
   ArrowRight,
+  Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSystemHealth, useCodeSystems, useMappingQuality } from "../hooks/useApi";
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const stats = [
-    { title: "NAMASTE Codes", value: "12,847", change: "+127 this week", trend: "up" },
-    { title: "TM2 Codes", value: "8,652", change: "+43 this week", trend: "up" },
-    { title: "Active Mappings", value: "6,234", change: "+89 this week", trend: "up" },
-    { title: "Patient Records", value: "1,456", change: "+12 today", trend: "up" },
-  ];
+  // Fetch real data from APIs
+  const { data: systemHealth, isLoading: healthLoading } = useSystemHealth();
+  const { data: codeSystems, isLoading: codeSystemsLoading } = useCodeSystems();
+  const { data: mappingQuality, isLoading: mappingLoading } = useMappingQuality();
+
+  // Calculate stats from real data or show loading state
+  const stats = React.useMemo(() => {
+    if (healthLoading || codeSystemsLoading || mappingLoading) {
+      return [
+        { title: "NAMASTE Codes", value: "Loading...", change: "", trend: "up" },
+        { title: "TM2 Codes", value: "Loading...", change: "", trend: "up" },
+        { title: "Active Mappings", value: "Loading...", change: "", trend: "up" },
+        { title: "System Status", value: "Loading...", change: "", trend: "up" },
+      ];
+    }
+
+    return [
+      { 
+        title: "NAMASTE Codes", 
+        value: codeSystems?.data?.entry?.filter((cs: any) => cs.resource?.url?.includes('namaste'))?.length?.toString() || "0", 
+        change: "+127 this week", 
+        trend: "up" 
+      },
+      { 
+        title: "TM2 Codes", 
+        value: codeSystems?.data?.entry?.filter((cs: any) => cs.resource?.url?.includes('icd11-tm2'))?.length?.toString() || "0", 
+        change: "+43 this week", 
+        trend: "up" 
+      },
+      { 
+        title: "Active Mappings", 
+        value: mappingQuality?.data?.overall?.totalMappings?.toString() || "0", 
+        change: `${Math.round((mappingQuality?.data?.overall?.averageConfidence || 0) * 100)}% confidence`, 
+        trend: "up" 
+      },
+      { 
+        title: "System Health", 
+        value: systemHealth?.data?.status === 'HEALTHY' ? "✓ Online" : "⚠ Issues", 
+        change: systemHealth?.data?.uptime ? `${Math.floor(systemHealth.data.uptime / 3600)}h uptime` : "", 
+        trend: systemHealth?.data?.status === 'HEALTHY' ? "up" : "down" 
+      },
+    ];
+  }, [systemHealth, codeSystems, mappingQuality, healthLoading, codeSystemsLoading, mappingLoading]);
 
   const quickActions = [
     { title: "Code Lookup", description: "Search and browse medical codes", icon: Search, iconColor: "text-red-600", bgColor: "bg-red-50", page: "namaste-codes" },
     { title: "Mapping Explorer", description: "Explore code mappings between systems", icon: Map, iconColor: "text-green-600", bgColor: "bg-green-50", page: "mappings" },
     { title: "Smart Search", description: "Unified search across all systems", icon: FileSearch, iconColor: "text-orange-600", bgColor: "bg-orange-50", page: "namaste-codes" },
     { title: "Bulk Downloads", description: "Download FHIR data in bulk", icon: Download, iconColor: "text-yellow-600", bgColor: "bg-yellow-50", page: "downloads" },
+    { title: "API Integration", description: "Test and verify API connections", icon: Shield, iconColor: "text-blue-600", bgColor: "bg-blue-50", page: "integration-test" },
   ];
 
   const handleActionClick = (page: string) => {
@@ -68,7 +108,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* Quick Actions */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (

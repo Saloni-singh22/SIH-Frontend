@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-// import { Layout } from './components/Layout';
+import { useState } from 'react';
+import { QueryProvider } from './components/QueryProvider';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { NamasteCodes } from './components/pages/NamasteCodes';
@@ -10,8 +10,13 @@ import { FHIRDownloads } from './components/pages/FHIRDownloads';
 import { AdminPage } from './components/pages/AdminPage';
 import { HelpPage } from './components/pages/HelpPage';
 import { SettingsPage } from './components/pages/SettingsPage';
+import { IntegrationVerification } from './components/IntegrationVerification';
+import { validateEnvironment } from './config/env';
 
-export default function App() {
+// Validate environment configuration on app startup
+validateEnvironment();
+
+function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
 
   const renderCurrentPage = () => {
@@ -34,6 +39,8 @@ export default function App() {
         return <HelpPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'integration-test':
+        return <IntegrationVerification />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }
@@ -49,5 +56,13 @@ export default function App() {
         {renderCurrentPage()}
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryProvider>
+      <AppContent />
+    </QueryProvider>
   );
 }
